@@ -32,19 +32,16 @@ type IDF struct {
 	// the list of word frequencies
 	freqs []float64
 
-	// loading some stop words
-	StopWord *stop_word.StopWord
-
-	// loading segmenter for cut word
-	Seg gse.Segmenter
+	Base
 }
 
-// NewIDF create a new IDF
+// NewIDF create a new Relevance to implementing IDF
 func NewIDF() Relevance {
 	idf := &IDF{
-		freqs:    make([]float64, 0),
-		StopWord: stop_word.NewStopWord(),
+		freqs: make([]float64, 0),
 	}
+
+	idf.StopWord = stop_word.NewStopWord()
 
 	return Relevance(idf)
 }
@@ -124,14 +121,17 @@ func (i *IDF) CalculateWeight(k string, v float64) float64 {
 	return i.median * v
 }
 
+// GetSeg get IDF Segmenter
 func (i *IDF) GetSeg() gse.Segmenter {
 	return i.Seg
 }
 
-func (i *IDF) LoadDictStr(str string) error {
-	return nil
+// LoadDictStr load dict for IDF seg
+func (i *IDF) LoadDictStr(dictStr string) error {
+	return i.Seg.LoadDictStr(dictStr)
 }
 
+// LoadStopWord load stop word for IDF
 func (i *IDF) LoadStopWord(fileName ...string) error {
-	return nil
+	return i.StopWord.LoadDict(fileName...)
 }

@@ -2,6 +2,7 @@ package relevance
 
 import (
 	"github.com/go-ego/gse"
+	"github.com/go-ego/gse/hmm/stop_word"
 )
 
 // Relevance easily scalable Relevance calculations (for idf, tf-idf, bm25 and so on)
@@ -13,8 +14,10 @@ type Relevance interface {
 	// if incoming params no exist, will load file from default file path
 	LoadDict(files ...string) error
 
-	LoadDictStr(str string) error
+	// LoadDictStr loading dict file by file path
+	LoadDictStr(pathStr string) error
 
+	// LoadStopWord loading word file by filename
 	LoadStopWord(fileName ...string) error
 
 	// Freq find the frequency, position, existence information of the key
@@ -31,9 +34,17 @@ type Relevance interface {
 	GetFreqMap(text string) map[string]float64
 
 	// CalculateWeight calculate the word's weight
-	// k: word, v
+	// k: word, v: the frequency of word
 	CalculateWeight(k string, v float64) float64
 
 	// GetSeg Get the segmenter of Relevance algorithms
 	GetSeg() gse.Segmenter
+}
+
+type Base struct {
+	// loading some stop words
+	StopWord *stop_word.StopWord
+
+	// loading segmenter for cut word
+	Seg gse.Segmenter
 }
