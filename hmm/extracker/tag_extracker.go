@@ -1,11 +1,10 @@
-package idf
+package extracker
 
 import (
 	"sort"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/go-ego/gse"
+	"github.com/go-ego/gse/hmm/relevance"
 )
 
 // Segment type a word with weight.
@@ -47,78 +46,47 @@ func (ss Segments) Swap(i, j int) {
 type TagExtracter struct {
 	seg gse.Segmenter
 
-	Idf      *Idf
-	stopWord *StopWord
+	// calculate weight by Relevance(including IDF,TF-IDF,BM25 and so on)
+	Relevance relevance.Relevance
+
+	// stopWord *StopWord
 }
 
 // WithGse register the gse segmenter
 func (t *TagExtracter) WithGse(segs gse.Segmenter) {
-	t.stopWord = NewStopWord()
+	// t.stopWord = NewStopWord()
 	t.seg = segs
 }
 
 // LoadDict load and create a new dictionary from the file
 func (t *TagExtracter) LoadDict(fileName ...string) error {
-	t.stopWord = NewStopWord()
+	// t.stopWord = NewStopWord()
 	return t.seg.LoadDict(fileName...)
 }
 
-// LoadIdf load and create a new Idf dictionary from the file.
-func (t *TagExtracter) LoadIdf(fileName ...string) error {
-	t.Idf = NewIdf()
-	return t.Idf.LoadDict(fileName...)
+// LoadIDF load and create a new IDF dictionary from the file.
+func (t *TagExtracter) LoadIDF(fileName ...string) error {
+	t.Relevance = relevance.NewIDF()
+	return t.Relevance.LoadDict(fileName...)
 }
 
-// LoadIdfStr load and create a new Idf dictionary from the string.
-func (t *TagExtracter) LoadIdfStr(str string) error {
-	t.Idf = NewIdf()
-	return t.Idf.seg.LoadDictStr(str)
+// LoadIDFStr load and create a new IDF dictionary from the string.
+func (t *TagExtracter) LoadIDFStr(str string) error {
+	t.Relevance = relevance.NewIDF()
+	return t.Relevance.LoadDictStr(str)
 }
 
 // LoadStopWords load and create a new StopWord dictionary from the file.
 func (t *TagExtracter) LoadStopWords(fileName ...string) error {
-	t.stopWord = NewStopWord()
-	return t.stopWord.LoadDict(fileName...)
+	return t.Relevance.LoadStopWord(fileName...)
 }
 
-// ExtractTags extract the topK key words from text.
+// ExtractTags extract the topK keywords from text.
 func (t *TagExtracter) ExtractTags(text string, topK int) (tags Segments) {
-	freqMap := make(map[string]float64)
-
-	for _, w := range t.seg.Cut(text, true) {
-		w = strings.TrimSpace(w)
-		if utf8.RuneCountInString(w) < 2 {
-			continue
-		}
-		if t.stopWord.IsStopWord(w) {
-			continue
-		}
-
-		if f, ok := freqMap[w]; ok {
-			freqMap[w] = f + 1.0
-		} else {
-			freqMap[w] = 1.0
-		}
-	}
-
-	total := 0.0
-	for _, freq := range freqMap {
-		total += freq
-	}
-
-	for k, v := range freqMap {
-		freqMap[k] = v / total
-	}
 
 	ws := make(Segments, 0)
-	var s Segment
-	for k, v := range freqMap {
-		if freq, _, ok := t.Idf.Freq(k); ok {
-			s = Segment{text: k, weight: freq * v}
-		} else {
-			s = Segment{text: k, weight: t.Idf.median * v}
-		}
-		ws = append(ws, s)
+	for k, v := range t.Relevance.GetFreqMap(text) {
+		ws = append(ws, Segment{text: k, weight: t.Relevance.CalculateWeight(k, v)})
 	}
 
 	sort.Sort(sort.Reverse(ws))

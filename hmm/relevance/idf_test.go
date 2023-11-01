@@ -1,10 +1,12 @@
-package idf
+package relevance_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/go-ego/gse"
+	"github.com/go-ego/gse/hmm/extracker"
+
 	"github.com/vcaesar/tt"
 )
 
@@ -14,7 +16,7 @@ var (
 )
 
 func TestExtAndRank(t *testing.T) {
-	var te TagExtracter
+	var te extracker.TagExtracter
 	te.WithGse(segs)
 	err := te.LoadIdf()
 	tt.Nil(t, err)
@@ -22,7 +24,7 @@ func TestExtAndRank(t *testing.T) {
 	segments := te.ExtractTags(text, 5)
 	fmt.Println("segments: ", len(segments), segments)
 
-	var tr TextRanker
+	var tr extracker.TextRanker
 	tr.WithGse(segs)
 
 	results := tr.TextRank(text, 5)

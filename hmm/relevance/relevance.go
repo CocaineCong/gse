@@ -1,0 +1,39 @@
+package relevance
+
+import (
+	"github.com/go-ego/gse"
+)
+
+// Relevance easily scalable Relevance calculations (for idf, tf-idf, bm25 and so on)
+type Relevance interface {
+	// AddToken add text, frequency, position on obj
+	AddToken(text string, freq float64, pos ...string) error
+
+	// LoadDict load file from incoming parameters,
+	// if incoming params no exist, will load file from default file path
+	LoadDict(files ...string) error
+
+	LoadDictStr(str string) error
+
+	LoadStopWord(fileName ...string) error
+
+	// Freq find the frequency, position, existence information of the key
+	Freq(key string) (float64, string, bool)
+
+	// NumTokens  the number of tokens in the dictionary
+	NumTokens() int
+
+	// TotalFreq the total number of tokens in the dictionary
+	TotalFreq() float64
+
+	// GetFreqMap get frequency map
+	// key: word, value: frequency
+	GetFreqMap(text string) map[string]float64
+
+	// CalculateWeight calculate the word's weight
+	// k: word, v
+	CalculateWeight(k string, v float64) float64
+
+	// GetSeg Get the segmenter of Relevance algorithms
+	GetSeg() gse.Segmenter
+}
