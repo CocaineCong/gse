@@ -5,42 +5,8 @@ import (
 
 	"github.com/go-ego/gse"
 	"github.com/go-ego/gse/hmm/relevance"
+	"github.com/go-ego/gse/hmm/segment"
 )
-
-// Segment type a word with weight.
-type Segment struct {
-	text   string
-	weight float64
-}
-
-// Text return the segment's text.
-func (s Segment) Text() string {
-	return s.text
-}
-
-// Weight return the segment's weight.
-func (s Segment) Weight() float64 {
-	return s.weight
-}
-
-// Segments type a slice of Segment.
-type Segments []Segment
-
-func (ss Segments) Len() int {
-	return len(ss)
-}
-
-func (ss Segments) Less(i, j int) bool {
-	if ss[i].weight == ss[j].weight {
-		return ss[i].text < ss[j].text
-	}
-
-	return ss[i].weight < ss[j].weight
-}
-
-func (ss Segments) Swap(i, j int) {
-	ss[i], ss[j] = ss[j], ss[i]
-}
 
 // TagExtracter is extract tags struct.
 type TagExtracter struct {
@@ -82,20 +48,24 @@ func (t *TagExtracter) LoadStopWords(fileName ...string) error {
 }
 
 // ExtractTags extract the topK keywords from text.
-func (t *TagExtracter) ExtractTags(text string, topK int) (tags Segments) {
-
-	ws := make(Segments, 0)
-	for k, v := range t.Relevance.GetFreqMap(text) {
-		ws = append(ws, Segment{text: k, weight: t.Relevance.CalculateWeight(k, v)})
+func (t *TagExtracter) ExtractTags(text string, topK int) (tags segment.Segments) {
+	if t.Relevance == nil {
+		// If no correlation algorithm, we will set the idf for default.
+		t.Relevance = relevance.NewIDF()
 	}
 
-	sort.Sort(sort.Reverse(ws))
+	// handler text to construct segment with weight
+	weighSeg := t.Relevance.ConstructSeg(text)
 
-	if len(ws) > topK {
-		tags = ws[:topK]
+	// sort by weight desc
+	sort.Sort(sort.Reverse(weighSeg))
+
+	// choose the top keywords if length of weightSeg bigger than topK
+	if len(weighSeg) > topK {
+		tags = weighSeg[:topK]
 		return
 	}
 
-	tags = ws
+	tags = weighSeg
 	return
 }

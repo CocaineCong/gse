@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-ego/gse"
+	"github.com/go-ego/gse/hmm/segment"
 	"github.com/go-ego/gse/hmm/stop_word"
 )
 
@@ -80,8 +81,8 @@ func (i *IDF) TotalFreq() float64 {
 	return i.Seg.Dict.TotalFreq()
 }
 
-// GetFreqMap return the IDF freq map
-func (i *IDF) GetFreqMap(text string) map[string]float64 {
+// FreqMap return the IDF freq map
+func (i *IDF) FreqMap(text string) map[string]float64 {
 	freqMap := make(map[string]float64)
 
 	for _, w := range i.Seg.Cut(text, true) {
@@ -112,8 +113,8 @@ func (i *IDF) GetFreqMap(text string) map[string]float64 {
 	return freqMap
 }
 
-// CalculateWeight calculate the word's weight by IDF
-func (i *IDF) CalculateWeight(k string, v float64) float64 {
+// calculateWeight calculate the word's weight by IDF
+func (i *IDF) calculateWeight(k string, v float64) float64 {
 	if freq, _, ok := i.Freq(k); ok {
 		return freq * v
 	}
@@ -134,4 +135,16 @@ func (i *IDF) LoadDictStr(dictStr string) error {
 // LoadStopWord load stop word for IDF
 func (i *IDF) LoadStopWord(fileName ...string) error {
 	return i.StopWord.LoadDict(fileName...)
+}
+
+// ConstructSeg construct segment with weight
+func (i *IDF) ConstructSeg(text string) segment.Segments {
+	// make segment list by total freq num
+	ws := make([]segment.Segment, i.TotalFreq())
+
+	for k, v := range i.FreqMap(text) {
+		ws = append(ws, segment.Segment{Text: k, Weight: i.calculateWeight(k, v)})
+	}
+
+	return ws
 }

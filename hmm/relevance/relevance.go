@@ -2,6 +2,7 @@ package relevance
 
 import (
 	"github.com/go-ego/gse"
+	"github.com/go-ego/gse/hmm/segment"
 	"github.com/go-ego/gse/hmm/stop_word"
 )
 
@@ -29,16 +30,15 @@ type Relevance interface {
 	// TotalFreq the total number of tokens in the dictionary
 	TotalFreq() float64
 
-	// GetFreqMap get frequency map
+	// FreqMap get frequency map
 	// key: word, value: frequency
-	GetFreqMap(text string) map[string]float64
-
-	// CalculateWeight calculate the word's weight
-	// k: word, v: the frequency of word
-	CalculateWeight(k string, v float64) float64
+	FreqMap(text string) map[string]float64
 
 	// GetSeg Get the segmenter of Relevance algorithms
 	GetSeg() gse.Segmenter
+
+	// ConstructSeg return the segment with weight
+	ConstructSeg(text string) segment.Segments
 }
 
 type Base struct {
